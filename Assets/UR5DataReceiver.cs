@@ -7,17 +7,50 @@ public class UR5DataReceiver : MonoBehaviour
     public UR5Controller ur5Controller;
     private string url = "http://fiware.macwin.pt:1026/v2/entities/Device:braco001/attrs/actual_q"; // URL do Orion Context Broker
 
+    private bool fetchingData = false;
+    private Coroutine fetchCoroutine;
+
     void Start()
     {
-        InvokeRepeating("GetJointValuesCoroutine", 0f, 1f); // Atualizar a cada 1 segundo
+        // Inicialmente não começamos a buscar dados.
     }
 
-    void GetJointValuesCoroutine()
+    void Update()
     {
-        StartCoroutine(GetJointValues());
+        // O Update não é necessário aqui.
     }
 
-    IEnumerator GetJointValues()
+    public void StartFetchingData()
+    {
+        if (!fetchingData)
+        {
+            fetchingData = true;
+            fetchCoroutine = StartCoroutine(FetchDataEverySecond());
+        }
+    }
+
+    public void StopFetchingData()
+    {
+        if (fetchingData)
+        {
+            fetchingData = false;
+            if (fetchCoroutine != null)
+            {
+                StopCoroutine(fetchCoroutine);
+            }
+        }
+    }
+
+    private IEnumerator FetchDataEverySecond()
+    {
+        while (fetchingData)
+        {
+            yield return GetJointValues();
+            yield return new WaitForSeconds(1f); // Aguarda 1 segundo antes de fazer a próxima solicitação
+        }
+    }
+
+    private IEnumerator GetJointValues()
     {
         UnityWebRequest www = UnityWebRequest.Get(url);
         www.SetRequestHeader("Fiware-Service", "openiot");

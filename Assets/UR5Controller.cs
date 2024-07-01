@@ -3,6 +3,7 @@
 public class UR5Controller : MonoBehaviour
 {
     public GameObject RobotBase;
+    public UR5DataReceiver dataReceiver;
     public float[] jointValues = new float[6];
     private GameObject[] jointList = new GameObject[6];
     private float[] upperLimit = { 180f, 180f, 180f, 180f, 180f, 180f };
@@ -26,7 +27,7 @@ public class UR5Controller : MonoBehaviour
     void OnGUI()
     {
         int boundary = 20;
-        int labelHeight = Application.isEditor ? 20 : 40;
+        int labelHeight = UnityEngine.Application.isEditor ? 20 : 40;
         GUI.skin.label.fontSize = GUI.skin.box.fontSize = GUI.skin.button.fontSize = labelHeight;
         GUI.skin.label.alignment = TextAnchor.MiddleLeft;
 
@@ -34,6 +35,41 @@ public class UR5Controller : MonoBehaviour
         {
             GUI.Label(new Rect(boundary, boundary + (i * 2 + 1) * labelHeight, labelHeight * 4, labelHeight), "Joint " + i + ": ");
             jointValues[i] = GUI.HorizontalSlider(new Rect(boundary + labelHeight * 4, boundary + (i * 2 + 1) * labelHeight + labelHeight / 4, labelHeight * 5, labelHeight), jointValues[i], lowerLimit[i], upperLimit[i]);
+        }
+
+        if (GUI.Button(new Rect(boundary, boundary + (14 * labelHeight), labelHeight * 10, labelHeight * 2), "Replay Data"))
+        {
+            OnHistoricalDataButtonClick();
+        }
+
+        float buttonWidth = labelHeight * 10;
+        float buttonHeight = labelHeight * 2;
+        float buttonXPosition = Screen.width - buttonWidth - boundary;
+
+        if (GUI.Button(new Rect(buttonXPosition, boundary + (12 * labelHeight), buttonWidth, buttonHeight), "Play"))
+        {
+            if (dataReceiver != null)
+            {
+                UnityEngine.Debug.Log("Play button clicked. Starting data fetching...");
+                dataReceiver.StartFetchingData();
+            }
+            else
+            {
+                UnityEngine.Debug.LogError("DataReceiver is not assigned.");
+            }
+        }
+
+        if (GUI.Button(new Rect(buttonXPosition, boundary + (15 * labelHeight), buttonWidth, buttonHeight), "Stop"))
+        {
+            if (dataReceiver != null)
+            {
+                UnityEngine.Debug.Log("Stop button clicked. Stopping data fetching...");
+                dataReceiver.StopFetchingData();
+            }
+            else
+            {
+                UnityEngine.Debug.LogError("DataReceiver is not assigned.");
+            }
         }
     }
 
@@ -72,5 +108,10 @@ public class UR5Controller : MonoBehaviour
         {
             jointValues[i] = Mathf.Clamp(newJointValues[i], lowerLimit[i], upperLimit[i]);
         }
+    }
+
+    void OnHistoricalDataButtonClick()
+    {
+        FindObjectOfType<UR5HistoricalDataRequester>().RequestHistoricalData();
     }
 }
